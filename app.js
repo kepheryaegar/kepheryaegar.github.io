@@ -13,6 +13,7 @@ var layer;
 var marker;
 var cursors;
 var queue = [];
+var can_click = true;
 
 function create() {
 
@@ -45,20 +46,26 @@ function getTileProperties() {
     var x = layer.getTileX(game.input.activePointer.worldX);
     var y = layer.getTileY(game.input.activePointer.worldY);
     var tile = map.getTile(x, y, layer);
+    if (tile === null || !can_click) {
+        return;
+    }
     tile.properties.wibble = true;
     floodfill(x, y, 1, 10);
-    console.log(JSON.stringify(queue))
+    console.log(JSON.stringify(queue));
     // map.putTile(10, 1, 1, layer);
 
     for (var i = 0; i < queue.length ; i++) {
         setTimeout(function() {
+            can_click = false;
             var coordxy = queue.shift();
             console.log(coordxy[2]);
+            game.debug.text('' + coordxy[2], 16, 550);
             map.putTile(10, coordxy[0], coordxy[1], layer);
             if (queue.length === 0) {
-                console.log('Done!')
+                game.debug.text('Done', 700, 550);
+                can_click = true;
             }
-        }, 150 * i);
+        }, 50 * i);
     }
 }
 
