@@ -11,15 +11,8 @@ function preload() {
 var map;
 var layer;
 var marker;
-
-// var sprite;
 var cursors;
-
-var width = 20,
-    height = 15;
-
-var max_recur = 10000;
-var queue = 0;
+var queue = [];
 
 function create() {
 
@@ -37,7 +30,7 @@ function create() {
 
     //  Our painting marker
     marker = game.add.graphics();
-    marker.lineStyle(2, 0xffffff, 1);
+    marker.lineStyle(2, 0xFE4747, 1);
     marker.drawRect(0, 0, 32, 32);
 
     game.input.addMoveCallback(updateMarker, this);
@@ -49,18 +42,24 @@ function create() {
 }
 
 function getTileProperties() {
-
     var x = layer.getTileX(game.input.activePointer.worldX);
     var y = layer.getTileY(game.input.activePointer.worldY);
     var tile = map.getTile(x, y, layer);
     tile.properties.wibble = true;
-    console.log(tile);
-    // map.putTile(tile.index + 1, x, y, layer);
-    queue = 0;
-    // game.time.slowMotion = 10;
-    console.log(game.time.slowMotion);
     floodfill(x, y, 1, 10);
+    console.log(JSON.stringify(queue))
+    // map.putTile(10, 1, 1, layer);
 
+    for (var i = 0; i < queue.length ; i++) {
+        setTimeout(function() {
+            var coordxy = queue.shift();
+            console.log(coordxy[2]);
+            map.putTile(10, coordxy[0], coordxy[1], layer);
+            if (queue.length === 0) {
+                console.log('Done!')
+            }
+        }, 150 * i);
+    }
 }
 
 function pause() {
@@ -74,36 +73,23 @@ function pause() {
 
 
 function floodfill(x, y, target_index, replacement_index, status) {
-    queue ++;
-    game.paused = true;
-    pause().done(function() {
-        console.log(x, y, target_index, replacement_index, status);
-        if (map.getTile(x, y, layer).index !== target_index) {
-            // console.log('if (map.getTile(x, y, layer).index !== target_index) {')
-            return;
-        }
-        if (target_index === replacement_index) {
-            // console.log('if (target_index === replacement_index) {');
-            return;
-        }
-        // if (queue > max_recur) {
-        //     console.log('if (queue > max_recur) {')
-        //     return;
-        // }
-        if (x < 0 || x > width - 1) {
-            console.log('if (x < 0 || x > width - 1) {')
-            return;
-        }
-        if (y < 0 || y > height - 1) {
-            console.log('if (y < 0 || y > height - 1) {')
-            return;
-        }
-        map.putTile(replacement_index, x, y, layer);
-        floodfill(x+1, y, target_index, replacement_index, 'go right');
-        floodfill(x-1, y, target_index, replacement_index, 'go left');
-        floodfill(x, y+1, target_index, replacement_index, 'go bottom');
-        floodfill(x, y-1, target_index, replacement_index, 'go top');
-    });
+    // console.log(x, y, target_index, replacement_index, status);
+    if (map.getTile(x, y, layer).__index === undefined) {
+        map.getTile(x, y, layer).__index = map.getTile(x, y, layer).index;
+    }
+    if (map.getTile(x, y, layer).__index !== target_index) {
+        return;
+    }
+    if (target_index === replacement_index) {
+        return;
+    }
+    // map.putTile(replacement_index, x, y, layer);
+    map.getTile(x, y, layer).__index = replacement_index;
+    queue.push([x, y, status]);
+    floodfill(x+1, y, target_index, replacement_index, 'go right');
+    floodfill(x-1, y, target_index, replacement_index, 'go left');
+    floodfill(x, y+1, target_index, replacement_index, 'go bottom');
+    floodfill(x, y-1, target_index, replacement_index, 'go top');
 }
 
 function updateMarker() {
@@ -113,7 +99,7 @@ function updateMarker() {
 
     if (game.input.mousePointer.isDown) {
         // map.putTile(44, layer.getTileX(marker.x), layer.getTileY(marker.y), layer);
-        console.log(layer.getTileX(marker.x), layer.getTileX(marker.y))
+        // console.log(layer.getTileX(marker.x), layer.getTileX(marker.y))
         // map.fill(currentTile, layer.getTileX(marker.x), layer.getTileY(marker.y), 4, 4, layer);
     }
 }
